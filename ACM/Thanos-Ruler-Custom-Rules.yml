@@ -1,0 +1,189 @@
+apiVersion: v1
+data:
+  custom_rules.yaml: |
+    groups:
+      - name: Cluster not reacable
+        rules:
+        - alert: " Cluster not reachable"
+          annotations:
+            summary: "{{ $labels.name}} Cluster not reachable"
+            description: "{{ $labels.name}} Cluster not reachable"
+          expr: acm_managed_cluster_labels{feature_open_cluster_management_io_addon_search_collector="unreachable"}
+          for: 3m
+          labels:
+            instance: "{{ $labels.instance }}"
+            cluster: "{{ $labels.cluster }}"
+            clusterID: "{{ $labels.clusterID }}"
+            severity: critical
+      - name: Node not ready
+        rules:
+        - alert: " node not ready"
+          annotations:
+            summary: "{{ $labels.node}} node not ready"
+            description: "{{ $labels.node}} node not ready"
+          expr: (kube_node_status_condition{condition="Ready",status="true"}) == 0
+          for: 3m
+          labels:
+            instance: "{{ $labels.instance }}"
+            cluster: "{{ $labels.cluster }}"
+            clusterID: "{{ $labels.clusterID }}"
+            severity: critical
+      - name: Node has disk pressure
+        rules:
+        - alert: " node has disk pressure"
+          annotations:
+            summary: "{{ $labels.node}} node has disk presssure"
+            description: "{{ $labels.node}} node has disk pressure"
+          expr: (kube_node_status_condition{condition="DiskPressure",status="true"}) == 1
+          for: 3m
+          labels:
+            instance: "{{ $labels.instance }}"
+            cluster: "{{ $labels.cluster }}"
+            clusterID: "{{ $labels.clusterID }}"
+            severity: critical
+      - name: Node has memory pressure
+        rules:
+        - alert: " node has memory pressure"
+          annotations:
+            summary: "{{ $labels.node}} node has memory presssure"
+            description: "{{ $labels.node}} node has memory pressure"
+          expr: (kube_node_status_condition{condition="MemoryPressure",status="true"}) == 1
+          for: 3m
+          labels:
+            instance: "{{ $labels.instance }}"
+            cluster: "{{ $labels.cluster }}"
+            clusterID: "{{ $labels.clusterID }}"
+            severity: critical
+      - name: Node has pid pressure
+        rules:
+        - alert: " node has PID pressure"
+          annotations:
+            summary: "{{ $labels.node}} node has PID presssure"
+            description: "{{ $labels.node}} node has PID pressure"
+          expr: (kube_node_status_condition{condition="PIDPressure",status="true"}) == 1
+          for: 3m
+          labels:
+            instance: "{{ $labels.instance }}"
+            cluster: "{{ $labels.cluster }}"
+            clusterID: "{{ $labels.clusterID }}"
+            severity: critical
+      - name: Pod with many high restart count in last 12h
+        rules:
+        - alert: "Pod with many restart number above 100 in last 12h"
+          annotations:
+            summary: "{{ $labels.pod}} Pod with many high restart count in last 12h"
+            description: "{{ $labels.pod}} Pod with many high restart count in last 12h"
+          expr: (increase(kube_pod_container_status_restarts_total{}[12h])) > 100
+          for : 12h 
+          labels:
+            instance: "{{ $labels.instance }}"
+            cluster: "{{ $labels.cluster }}"
+            clusterID: "{{ $labels.clusterID }}"
+            severity: critical
+      - name: ClusterCPUReq-75
+        rules:
+        - alert: "CPUReq-75"
+          annotations:
+            summary: Notify when CPU requests on a cluster are greater than 75%
+            description: "The cluster {{ $labels.cluster }} has an elevated percentage of CPU requests: {{ $labels.clusterID }}."
+          expr: |
+            cluster:cpu_requested:ratio > 0.75
+          for: 5m
+          labels:
+            cluster: "{{ $labels.cluster }}"
+            severity: critical
+      - name: ClusterMemReq-75
+        rules:
+        - alert: "MemReq-75"
+          annotations:
+            summary: Notify when Memory requests on a cluster are greater than 75%
+            description: "The cluster {{ $labels.cluster }} has an elevated percentage of Memory requests: {{ $labels.clusterID }}."
+          expr: |
+            cluster:memory_requested:ratio > 0.75
+          for: 5m
+          labels:
+            cluster: "{{ $labels.cluster }}"
+            severity: critical
+      - name: CPULimitQuoat-90
+        rules:
+        - alert: "CpuLimitQuota-90"
+          annotations:
+            summary: Notify when cpu limits on a project quota are greater than 90%
+            description: "The namespace {{ $labels.namespace }} has an elevated percentage of Cpu Limit Quota"
+          expr: |
+            sum(kube_resourcequota{resource='limits.cpu',type='used'})by(namespace,clusterID, cluster) / sum(kube_resourcequota{resource='limits.cpu',type='hard'})by(namespace,clusterID, cluster) > 0.9
+          for: 5m
+          labels:
+            cluster: "{{ $labels.cluster }}"
+            severity: critical
+            namespace: "{{$labels.namespace}}"
+      - name: CPUReqQuoat-90
+        rules:
+        - alert: "CpuReqQuota-90"
+          annotations:
+            summary: Notify when cpu Req on a project quota are greater than 90%
+            description: "The namespace {{ $labels.namespace }} has an elevated percentage of Cpu Quota Quota"
+          expr: |
+            sum(kube_resourcequota{resource='requests.cpu',type='used'})by(namespace,clusterID, cluster) / sum(kube_resourcequota{resource='requests.cpu',type='hard'})by(namespace,clusterID, cluster) > 0.9
+          for: 5m
+          labels:
+            cluster: "{{ $labels.cluster }}"
+            severity: critical
+            namespace: "{{$labels.namespace}}"
+      - name: MemLimitQuoat-90
+        rules:
+        - alert: "MemLimitQuota-90"
+          annotations:
+            summary: Notify when Mem limits on a project quota are greater than 90%
+            description: "The namespace {{ $labels.namespace }} has an elevated percentage of Mem Limit Quota "
+          expr: |
+            sum(kube_resourcequota{resource='limits.memory',type='used'})by(namespace,clusterID, cluster) / sum(kube_resourcequota{resource='limits.memory',type='hard'})by(namespace,clusterID, cluster) > 0.9
+          for: 5m
+          labels:
+            cluster: "{{ $labels.cluster }}"
+            severity: critical
+            namespace: "{{$labels.namespace}}"
+      - name: MemReqQuoat-90
+        rules:
+        - alert: "MemReqQuota-90"
+          annotations:
+            summary: Notify when Mem Req on a project quota are greater than 90%
+            description: "The namespace {{ $labels.namespace }} has an elevated percentage of Mem Quota "
+          expr: |
+            sum(kube_resourcequota{resource='requests.memory',type='used'})by(namespace,clusterID, cluster) / sum(kube_resourcequota{resource='requests.memory',type='hard'})by(namespace,clusterID, cluster) > 0.9
+          for: 5m
+          labels:
+            cluster: "{{ $labels.cluster }}"
+            severity: critical
+            namespace: "{{$labels.namespace}}"
+      - name: NodeNTPNotSynchronising
+        rules:
+        - alert:
+          annotations:
+            description: Clock on {{ $labels.instance }} is not synchronising. Ensure NTP
+              is configured on this host.
+            summary: Clock not synchronising.
+          expr: |
+            min_over_time(node_timex_sync_status{job="node-exporter"}[5m]) == 0
+            and
+            node_timex_maxerror_seconds{job="node-exporter"} >= 16
+          for: 30m
+          labels:
+            severity: critical
+      - name: PVC_Usage
+        rules:
+        - alert: "PVCUsage"
+          annotations:
+            summary: "{{ $labels.persistentvolumeclaim}} pvc usage > 90% "
+            description: "{{ $labels.persistentvolumeclaim}} pvc usage has been above 85% for an extended period."
+          expr: (kubelet_volume_stats_used_bytes * on (namespace, persistentvolumeclaim, cluster) group_left (storageclass, provisioner) kube_persistentvolumeclaim_info) / (kubelet_volume_stats_capacity_bytes * on (namespace, persistentvolumeclaim, cluster) group_left (storageclass, provisioner) kube_persistentvolumeclaim_info) > 0.90
+          for: 30m
+          labels:
+            instance: "{{ $labels.instance }}"
+            cluster: "{{ $labels.cluster }}"
+            clusterID: "{{ $labels.clusterID }}"
+            severity: critical
+kind: ConfigMap
+metadata:
+  name: thanos-ruler-custom-rules
+  namespace: open-cluster-management-observability
